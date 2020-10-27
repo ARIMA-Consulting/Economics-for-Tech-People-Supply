@@ -1,0 +1,176 @@
+---
+title: "Economics for Tech People - Supply"
+author: "Tyler Harris"
+date: "10/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load Libraries
+
+# If you do not have readxl or tidyverse installed, uncomment the following lines
+# install.packages("readxl")
+# install.packages("tidyverse")# Load Libraries
+require(readxl)
+require(tidyverse)
+```
+
+```{r}
+# Import Data
+Supply_Data <- read_excel("Supply_Data.xlsx")
+
+# Check data import
+head(Supply_Data)
+```
+
+```{r}
+# Test plot
+plot(Supply_Data$Qs_2, Supply_Data$Price, type = "l", main = "Test Plot", xlab = "Quantity", ylab = "Price")
+```
+
+```{r}
+# Wrangle the data into a ggplot friendly structure
+Wrangled_Supply_Data <- data.frame(Price = Supply_Data$Price, stack(Supply_Data[2:11]))
+names(Wrangled_Supply_Data)[2] <- "Quantity"
+names(Wrangled_Supply_Data)[3] <- "Qs_num"
+
+# Check the data
+head(Wrangled_Supply_Data)
+```
+
+```{r}
+# Plot the individual supply curves
+ggplot(data = Wrangled_Supply_Data, aes(x = Quantity, y = Price)) +
+  geom_line(color = "darkred", size = 1) +
+  geom_point(color = "darkred") +
+  facet_wrap(. ~ Qs_num)
+```
+
+```{r}
+# Create market supply
+Market_Supply <- data.frame(Price = Supply_Data$Price, Market_Supply = rowSums(Supply_Data[2:11]))
+
+# Check the data
+head(Market_Supply)
+```
+
+```{r}
+# Plot market supply curve
+ggplot(data = Market_Supply, aes(x = Market_Supply, y = Price)) +
+  geom_line(color = "darkred", size = 1) +
+  geom_point(color = "darkred") +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  ggtitle("Market Supply Curve") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+# Add Elasticity zones
+# 10-5.5 zone 1
+# 5-4 zone 2
+# 3.5-0 zone 3
+
+Market_Supply$Elasticity_Zone <- as.character(c(1,1,1,1,1,1,1,1,1,1,2,2,2,3,3,3,3,3,3,3,3))
+Market_Supply
+```
+
+```{r}
+# Plot market supply with elasticity
+ggplot(data = Market_Supply, aes(x = Market_Supply, y = Price, color = Elasticity_Zone)) +
+  geom_line(size = 1) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  ggtitle("Market Supply with Elasticity Zones") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+### Create Linear Models ###
+
+# Filter Data
+Zone_1_glm_data <- Market_Supply %>%
+  filter(Elasticity_Zone == 1)
+
+# Create linear model
+Zone_1_glm <- glm(Market_Supply ~ Price, data = Zone_1_glm_data)
+
+# Create and print summary
+summary(Zone_1_glm)
+```
+
+```{r}
+# Filter Data
+Zone_2_glm_data <- Market_Supply %>%
+  filter(Elasticity_Zone == 2)
+
+# Create linear model
+Zone_2_glm <- glm(Market_Supply ~ Price, data = Zone_2_glm_data)
+
+# Create and print summary
+summary(Zone_2_glm)
+```
+
+```{r}
+# Filter Data
+Zone_3_glm_data <- Market_Supply %>%
+  filter(Elasticity_Zone == 3)
+
+# Create linear model
+Zone_3_glm <- glm(Market_Supply ~ Price, data = Zone_3_glm_data)
+
+# Create and print summary
+summary(Zone_3_glm)
+```
+
+```{r}
+# Compare against a GLM for the entire market supply
+
+# Create linear model
+All_supply_glm <- glm(Market_Supply ~ Price, data = Market_Supply)
+
+# Create and print summary
+summary(All_supply_glm)
+```
+
+```{r}
+# Look at the linear model line on the graph without looking at elasticity of different parts of the curve
+# Plot market supply with elasticity
+ggplot(data = Market_Supply, aes(x = Market_Supply, y = Price)) +
+  geom_line(size = 1) +
+  geom_point() +
+  geom_smooth(method = "lm", color = "darkred") +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  ggtitle("Linear Model of Market Supply without Elasticity Zones") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+```{r}
+# Maximize Total Revenue
+Market_Supply$Total_Revenue = Market_Supply$Price * Market_Supply$Market_Supply
+
+# Check the data
+Market_Supply
+```
+
+```{r}
+# Plot market supply with elasticity
+ggplot(data = Market_Supply, aes(x = Price, y = Total_Revenue, color = Elasticity_Zone)) +
+  geom_line(size = 1) +
+  geom_point() +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 0) +
+  ggtitle("Total Revenue Curve for Market Supply with Elasticity Zones") +
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+
+
